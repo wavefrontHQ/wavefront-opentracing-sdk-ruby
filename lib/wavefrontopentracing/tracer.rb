@@ -35,15 +35,6 @@ module WavefrontOpentracing
 
     attr_reader :scope_manager
 
-    # @return [Span, nil] the active span. This is a shorthand for
-    #   `scope_manager.active.span`, and nil will be returned if
-    #   Scope#active is nil.
-    def active_span
-      scope = scope_manager.active
-      scope.span if scope
-    end
-
-
     def start_span(operation_name,
                    child_of = nil,
                    references = nil,
@@ -129,17 +120,7 @@ module WavefrontOpentracing
                           finish_on_close = true)
       span = start_span(operation_name, child_of, references, tags, start_time,
                        ignore_active_span),
-      scope = @scope_manager.activate(span, finish_on_close: finish_on_close)
-
-      if block_given?
-        begin
-          yield scope
-        ensure
-          scope.close
-        end
-      else
-        scope
-      end
+      @scope_manager.activate(span, finish_on_close: finish_on_close)
     end
 
     def inject(span_context, format, carrier)

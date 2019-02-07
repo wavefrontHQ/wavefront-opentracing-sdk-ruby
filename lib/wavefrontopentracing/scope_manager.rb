@@ -2,6 +2,8 @@
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
+require_relative 'scope'
+
 module WavefrontOpentracing
   # ScopeManager represents an OpenTracing ScopeManager
   #
@@ -24,7 +26,7 @@ module WavefrontOpentracing
     #  returned instance.
     def activate(span, finish_on_close: true)
       return active if active && active.span == span
-      scope = WavefrontOpentracing::Scope.new(span, @scope_stack, finish_on_close: finish_on_close)
+      scope = Scope.new(span, @scope_stack, finish_on_close: finish_on_close)
       @scope_stack.push(scope)
       scope
     end
