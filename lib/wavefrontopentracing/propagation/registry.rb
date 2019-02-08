@@ -12,6 +12,7 @@ module Propagation
 
     def initialize
       # Construct propagator registry.
+
       @propagators = {
         OpenTracing::FORMAT_TEXT_MAP => Propagation::TextMapPropagator.new,
         OpenTracing::FORMAT_RACK => Propagation::HTTPPropagator.new
@@ -22,6 +23,7 @@ module Propagation
       # Get propagator of certain format.
       # @param format [OpenTracing::FORMAT] : Format a propagator
       # @return Propagator of given format
+
       @propagators[format]
     end
 
@@ -29,6 +31,7 @@ module Propagation
       # Register propagator.
       # @param format [OpenTracing::FORMAT] : Format a propagator
       # @param propagator [Propagator] : Propagator to be registered.
+
       @propagators.merge!(format => propagator)
     end
   end

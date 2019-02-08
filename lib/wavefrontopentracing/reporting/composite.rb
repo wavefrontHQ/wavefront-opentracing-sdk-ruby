@@ -15,7 +15,6 @@ module Reporting
     def initialize(*reporters)
       # Construct composite reporter
       # @param reporters [Reporter]: Reporters of composite reporter
-      super
       @reporters = reporters
     end
 
@@ -31,9 +30,9 @@ module Reporting
     def failure_count
       # Total failure count of all reporters
       # @return [int]: Total failure count
-      reporter = 0
+      total_count = 0
       @reporters.each do |rep|
-        reporter += rep.failure_count
+        total_count += rep.failure_count
       end
       reporter
     end

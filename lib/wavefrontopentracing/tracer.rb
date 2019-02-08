@@ -11,36 +11,35 @@ require_relative 'scope_manager'
 require_relative 'reporting/wavefront'
 require_relative 'propagation/registry'
 
+require_relative '../../util/application_tags' # TO-DO: Tobe replaced with tier-1 gem
+
 module WavefrontOpentracing
   # Wavefront Tracer
   class Tracer < OpenTracing::Tracer
 
-    def initialize(reporter, application_tags = nil, global_tags = nil)
+    def initialize(reporter, application_tags, global_tags = nil)
       # Construct Wavefront Tracer
 
       # @param reporter [Reporter] : propagation reporter
-      # @param application_tags [Hash] : Application tags
-      # @param tags [Hash] : Global tags for Tracer
+      # @param application_tags [ApplicationTags] : Application tags
+      # @param tags [List of pair] : Global tags for Tracer
+
       @reporter = reporter
-      @tags = Concurrent::Hash.new
-      unless global_tags.nil?
-        @tags.update(global_tags.each { |k, v| @tags[k] = v.to_s })
-      end
-      unless application_tags.nil?
-        @tags.update(application_tags.each { |k, v| @tags[k] = v.to_s })
-      end
+      @tags = global_tags || []
+      @tags.push(*application_tags.get_as_list) # TO-DO: add application_tags.get_as_list
       @registry = Propagation::Registry.new
       @scope_manager = ScopeManager.new
+      @active_span = nil
     end
 
     attr_reader :scope_manager
 
     def start_span(operation_name,
-                   child_of = nil,
-                   references = nil,
-                   tags = nil,
-                   start_time = nil,
-                   ignore_active_span = false)
+                   child_of: nil,
+                   references: nil,
+                   tags: nil,
+                   start_time: nil,
+                   ignore_active_span: false)
       # Start and return a new :class:`Span` representing a unit of work.
 
       # @param operation_name [String] : Operation Name
@@ -50,7 +49,7 @@ module WavefrontOpentracing
       #   If specified, the `references` parameter must be omitted.
       # @param references [List of Opentracing.Reference] (Optional) :
       #   references that identify one or more parent :class:`SpanContext`.
-      # @param tags [Hash] (Optional) : List of tags
+      # @param tags [List of pair] (Optional) : List of tags
       # @param start_time [Float] (Optional) : Span start time as a unix timestamp
       # @param ignore_active_span [Boolean] : An explicit flag that ignores
       # the current active `Scope` and creates a root `Span`.
@@ -59,27 +58,27 @@ module WavefrontOpentracing
 
       parents = []
       follows = []
-      baggage = nil
-      tags ||= Concurrent::Hash.new
-      tags.update(tags.each { |k, v| @tags[k] = v.to_s }) unless tags.nil?
-      start_time ||= Time.now
+      baggage = {}
+      tags ||= []
+      tags.push(*@tags)
+      start_time ||= Time.now.to_i
 
       parent = nil
       if !child_of.nil?
         parent = child_of
         # allow both Span and SpanContext to be passed as child_of
-        parent = child_of.context if parent.is_a?(WavefrontOpentracing::Span)
-        parents << parent.get_span_id
-
+        parent = child_of.context if parent.is_a?(Span)
+        parents << parent.span_id
+      # references filed will be omitted if child_of field is not None
       elsif parent.nil? && references
+        # allow both Span and SpanContext to be passed as reference
         references = [references] unless references.is_a?(Array)
         references.each do |reference|
-          next unless reference.is_a?(OpenTracing::Reference)
-
+          next if reference.is_a?(OpenTracing::Reference)
           reference_ctx = reference.context
           # allow both Span and SpanContext to be passed as reference
           reference_ctx = reference_ctx.context if
-              reference_ctx.is_a?(WavefrontOpentracing::Span)
+              reference_ctx.is_a?(Span)
 
           parent = reference_ctx if parent.nil?
 
@@ -100,26 +99,47 @@ module WavefrontOpentracing
           trace_id = SecureRandom.uuid
           span_id = trace_id
         end
-        baggage = {}
         baggage.update(parent.baggage) if parent && parent.baggage
       else
         trace_id = parent.trace_id
         span_id = SecureRandom.uuid
       end
 
-      span_ctx = WavefrontOpentracing::SpanContext.new(trace_id, span_id, baggage)
-      WavefrontOpentracing::Span.new(self, operation_name, span_ctx, start_time, parents, follows, tags)
+      span_ctx = SpanContext.new(trace_id, span_id, baggage)
+      Span.new(self, operation_name, span_ctx, start_time, parents, follows, tags)
     end
 
     def start_active_span(operation_name,
-                          child_of = nil,
-                          references = nil,
-                          tags = nil,
-                          start_time = nil,
-                          ignore_active_span = false,
-                          finish_on_close = true)
-      span = start_span(operation_name, child_of, references, tags, start_time,
-                       ignore_active_span),
+                          child_of: nil,
+                          references: nil,
+                          tags: nil,
+                          start_time: nil,
+                          ignore_active_span: false,
+                          finish_on_close: true
+                         )
+      # Return a newly started and activated :class:`Scope`.
+
+      # @param operation_name [String] : Operation Name
+      # @param child_of [WavefrontSpanContext or WavefrontSpan] (Optional) :
+      #   A WavefrontSpan or WavefrontSpanContext instance representing
+      #   the parent in a REFERENCE_CHILD_OF reference.
+      #   If specified, the `references` parameter must be omitted.
+      # @param references [List of Opentracing.Reference] (Optional) :
+      #   references that identify one or more parent :class:`SpanContext`.
+      # @param tags [List of pair] (Optional) : List of tags
+      # @param start_time [Float] (Optional) : Span start time as a unix timestamp
+      # @param ignore_active_span [Boolean] : An explicit flag that ignores
+      # the current active `Scope` and creates a root `Span`.
+
+      # @return [Span] : An already started Wavefront Span instance.
+
+      span = start_span(operation_name,
+                        child_of: child_of,
+                        references: references,
+                        tags: tags,
+                        start_time: start_time,
+                        ignore_active_span: ignore_active_span
+                       )
       @scope_manager.activate(span, finish_on_close: finish_on_close)
     end
 
