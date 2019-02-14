@@ -6,7 +6,6 @@ require 'concurrent'
 require 'time'
 require 'opentracing'
 require_relative 'span_context'
-require_relative 'tracer'
 
 module WavefrontOpentracing
   # Wavefront Span
@@ -128,8 +127,20 @@ module WavefrontOpentracing
       # @return: tags in map format: {key: [list_of_val]}
 
       return {} unless @tags
-
-      Hash[@tags.map { |key, value| [key, value] }] # TO-DO: Check return Hash
+      tags_map = {}
+      tags.each do |key, value|
+        if !tags_map.has_key?(key)
+          tags_map[key] = value
+        else
+          val = tags_map[key]
+          if !val.is_a?(Array)
+            tags_map[key] = Array.new
+            tags_map[key].push(val)
+          end
+          tags_map[key].push(value)
+        end
+      end
+      tags_map
     end
 
     private

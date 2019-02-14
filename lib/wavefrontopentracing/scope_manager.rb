@@ -51,7 +51,9 @@ module WavefrontOpentracing
       # Generate a random identifier to use as the Thread.current key. This is
       # needed so that it would be possible to create multiple tracers in one
       # thread (mostly useful for testing purposes)
+
       @scope_identifier = ScopeIdentifier.generate
+      store
     end
 
     def push(scope)
@@ -76,7 +78,7 @@ module WavefrontOpentracing
   class ScopeIdentifier
     def self.generate
       # 65..90.chr are characters between A and Z
-      "opentracing_#{(0...8).map { rand(65..90).chr }.join}".to_sym
+      "wavefrontopentracing_#{(0...8).map { rand(65..90).chr }.join}".to_sym
     end
   end
 end

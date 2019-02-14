@@ -4,9 +4,9 @@
 
 require 'forwardable'
 require_relative 'wavefrontopentracing/version'
+require_relative 'wavefrontopentracing/tracer'
 require_relative 'wavefrontopentracing/span_context'
 require_relative 'wavefrontopentracing/span'
-require_relative 'wavefrontopentracing/tracer'
 require_relative 'wavefrontopentracing/reporting/reporter'
 require_relative 'wavefrontopentracing/reporting/console'
 require_relative 'wavefrontopentracing/reporting/wavefront'

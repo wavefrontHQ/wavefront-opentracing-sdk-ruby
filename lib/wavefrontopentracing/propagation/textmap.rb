@@ -21,9 +21,10 @@ module Propagation
       # @param span_context [SpanContext]: Wavefront Span Context to be injected
       # @param carrier [dict]: Carrier
 
-      unless carrier.is_a?(Hash)
-        raise TypeError, 'Carrier not a text map collection.'
-      end
+      # TO_DO: Check, carrier is not of Hash type always
+#      unless carrier.is_a?(Hash)
+#        raise TypeError, 'Carrier not a text map collection.'
+#      end
 
       carrier[TRACE_ID] = span_context.trace_id
       carrier[SPAN_ID] = span_context.span_id
@@ -43,6 +44,7 @@ module Propagation
       trace_id = nil
       span_id = nil
       baggage = {}
+
       unless carrier.is_a?(Hash)
         raise TypeError, 'Carrier not a text map collection.'
       end

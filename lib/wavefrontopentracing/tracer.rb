@@ -26,7 +26,7 @@ module WavefrontOpentracing
 
       @reporter = reporter
       @tags = global_tags || []
-      @tags.push(*application_tags.get_as_list) # TO-DO: add application_tags.get_as_list
+      @tags.push(*application_tags.get_as_list)
       @registry = Propagation::Registry.new
       @scope_manager = ScopeManager.new
       @active_span = nil
@@ -106,7 +106,8 @@ module WavefrontOpentracing
       end
 
       span_ctx = SpanContext.new(trace_id, span_id, baggage)
-      Span.new(self, operation_name, span_ctx, start_time, parents, follows, tags)
+      Span.new(self, operation_name, span_ctx, start_time, parents,
+               follows, tags)
     end
 
     def start_active_span(operation_name,
@@ -140,6 +141,7 @@ module WavefrontOpentracing
                         start_time: start_time,
                         ignore_active_span: ignore_active_span
                        )
+      @active_span = span
       @scope_manager.activate(span, finish_on_close: finish_on_close)
     end
 

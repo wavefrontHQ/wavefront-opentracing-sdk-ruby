@@ -18,13 +18,16 @@ module Reporting
       # @param client [WavefrontProxyClient or WavefrontDirectClient] :
       # Wavefront Client
       # @param source [String] : Source of the reporter
+
       @sender = client
-      super(source: source)
+      @source = source
+#      super(source: source)
     end
 
     def report(wavefront_span)
       # Report span data via Wavefront Client.
       # @param wavefront_span: Wavefront Span to be reported.
+
       @sender.send_span(
         wavefront_span.operation_name,
         (wavefront_span.start_time * 1000).to_i,
@@ -37,21 +40,23 @@ module Reporting
         wavefront_span.tags,
         span_logs = nil
       )
-    rescue AttributeError, TypeError => exception
-      logger.add(Logger::ERROR) do
-        'Invalid Sender, no valid send_span function.'
-      end
+      rescue ArgumentError, TypeError => exception
+        logger.add(Logger::ERROR) do
+          'Invalid Sender, no valid send_span function.'
+        end
       raise exception
     end
 
     def failure_count
       # Get failure count from wavefront client.
       # @return [int]: Failure count
+
       @sender.failure_count
     end
 
     def close
       # Close the Wavefront client
+
       @sender.close
     end
   end
