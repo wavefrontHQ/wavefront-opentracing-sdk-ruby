@@ -4,12 +4,11 @@
 
 require 'concurrent'
 require 'time'
-require 'opentracing'
 require_relative 'span_context'
 
 module WavefrontOpentracing
   # Wavefront Span
-  class Span < OpenTracing::Span
+  class Span
 
     attr_reader :context, :operation_name, :start_time, :parents, :duration_time, :follows, :tags
 
@@ -22,7 +21,7 @@ module WavefrontOpentracing
       #                                  timestamp per
       # @param parents [uuid.UUID]: List of UUIDs of parents span
       # @param follows [uuid.UUID]: List of UUIDs of follows span
-      # @param tags [List of Pair]: initial key:value tags (per set_tag) of the Span
+      # @param tags [Hash]: initial key:value tags (per set_tag) of the Span
       
       @tracer = tracer
       @context = context
@@ -43,7 +42,7 @@ module WavefrontOpentracing
       # it will be encoded with to_s
 
       @update_lock.synchronize do
-        @tags.push(key, value) unless is_blank(key) && value
+        @tags.update( {key => value.to_s} ) unless is_blank(key) && value
       end
     end
 
@@ -119,36 +118,28 @@ module WavefrontOpentracing
       # Get tags in list format.
       # @return [List of pair] : list of tags
 
-      @tags
+      return [] unless @tags
+
+      tags_list = []
+      @tags.each do |key, val|
+        tags_list.push([key, val])
+      end
+      tags_list
     end
 
     def get_tags_as_map
       # Get tags in map format.
       # @return: tags in map format: {key: [list_of_val]}
 
-      return {} unless @tags
-      tags_map = {}
-      tags.each do |key, value|
-        if !tags_map.has_key?(key)
-          tags_map[key] = value
-        else
-          val = tags_map[key]
-          if !val.is_a?(Array)
-            tags_map[key] = Array.new
-            tags_map[key].push(val)
-          end
-          tags_map[key].push(value)
-        end
-      end
-      tags_map
+      @tags
     end
 
     private
 
     def is_blank(value)
-    # Check if the given value is blank or not
-    # @return [Boolean] : true: if not nil and not empty
-    #                     false: if nil or empty
+      # Check if the given value is blank or not
+      # @return [Boolean] : true: if not nil and not empty
+      #                     false: if nil or empty
       value.nil? || value.strip.empty? ? true : false
     end
   end

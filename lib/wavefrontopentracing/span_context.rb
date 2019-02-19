@@ -4,7 +4,7 @@
 
 module WavefrontOpentracing
   # Wavefront Span Context.
-  class SpanContext < OpenTracing::SpanContext
+  class SpanContext
 
     attr_reader :trace_id, :span_id, :baggage
 

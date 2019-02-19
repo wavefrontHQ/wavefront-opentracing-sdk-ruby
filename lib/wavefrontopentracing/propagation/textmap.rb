@@ -12,7 +12,7 @@ module Propagation
   class TextMapPropagator < Propagator
     include WavefrontOpentracing
     # Propagate contexts within TextMaps
-    BAGGAGE_PREFIX = "wf-ot-".freeze
+    BAGGAGE_PREFIX = "wf_ot_".freeze
     TRACE_ID = BAGGAGE_PREFIX + "traceid".freeze
     SPAN_ID = BAGGAGE_PREFIX + "spanid".freeze
 
@@ -20,11 +20,6 @@ module Propagation
       # Inject the given Span Context into TextMap Carrier.
       # @param span_context [SpanContext]: Wavefront Span Context to be injected
       # @param carrier [dict]: Carrier
-
-      # TO_DO: Check, carrier is not of Hash type always
-#      unless carrier.is_a?(Hash)
-#        raise TypeError, 'Carrier not a text map collection.'
-#      end
 
       carrier[TRACE_ID] = span_context.trace_id
       carrier[SPAN_ID] = span_context.span_id
@@ -51,12 +46,11 @@ module Propagation
 
       carrier.each do |key, val|
         key = key.downcase
-
-        if key == TRACE_ID
+        if key.include? TRACE_ID
           trace_id = val # To-Do: if validate_uuid(val)
-        elsif key == SPAN_ID
+        elsif key.include? SPAN_ID
           span_id = val # To-Do: if validate_uuid(val)
-        elsif key.start_with?(BAGGAGE_PREFIX)
+        elsif key.include? BAGGAGE_PREFIX
           baggage.merge!(key[BAGGAGE_PREFIX.length..-1] => val)
         end
       end

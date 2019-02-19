@@ -2,7 +2,6 @@
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
-require 'opentracing'
 require 'time'
 require 'securerandom'
 require_relative 'span'
@@ -15,21 +14,20 @@ require_relative '../../util/application_tags' # TO-DO: Tobe replaced with tier-
 
 module WavefrontOpentracing
   # Wavefront Tracer
-  class Tracer < OpenTracing::Tracer
+  class Tracer
 
     def initialize(reporter, application_tags, global_tags = nil)
       # Construct Wavefront Tracer
 
       # @param reporter [Reporter] : propagation reporter
       # @param application_tags [ApplicationTags] : Application tags
-      # @param tags [List of pair] : Global tags for Tracer
+      # @param tags [Hash] : Global tags for Tracer
 
       @reporter = reporter
-      @tags = global_tags || []
-      @tags.push(*application_tags.get_as_list)
+      @tags = global_tags || {}
+      @tags.update(application_tags.get)
       @registry = Propagation::Registry.new
       @scope_manager = ScopeManager.new
-      @active_span = nil
     end
 
     attr_reader :scope_manager
@@ -49,7 +47,7 @@ module WavefrontOpentracing
       #   If specified, the `references` parameter must be omitted.
       # @param references [List of Opentracing.Reference] (Optional) :
       #   references that identify one or more parent :class:`SpanContext`.
-      # @param tags [List of pair] (Optional) : List of tags
+      # @param tags [Hash] (Optional) : List of tags
       # @param start_time [Float] (Optional) : Span start time as a unix timestamp
       # @param ignore_active_span [Boolean] : An explicit flag that ignores
       # the current active `Scope` and creates a root `Span`.
@@ -59,8 +57,8 @@ module WavefrontOpentracing
       parents = []
       follows = []
       baggage = {}
-      tags ||= []
-      tags.push(*@tags)
+      tags ||= {}
+      tags.update(@tags)
       start_time ||= Time.now.to_i
 
       parent = nil
@@ -71,35 +69,36 @@ module WavefrontOpentracing
         parents << parent.span_id
       # references filed will be omitted if child_of field is not None
       elsif parent.nil? && references
-        # allow both Span and SpanContext to be passed as reference
+        # allow both single Reference and list of Reference to be passed
         references = [references] unless references.is_a?(Array)
         references.each do |reference|
-          next if reference.is_a?(OpenTracing::Reference)
-          reference_ctx = reference.context
-          # allow both Span and SpanContext to be passed as reference
-          reference_ctx = reference_ctx.context if
-              reference_ctx.is_a?(Span)
+          if reference.is_a?(OpenTracing::Reference)
+            reference_ctx = reference.context
+            # allow both Span and SpanContext to be passed as reference
+            reference_ctx = reference_ctx.context if
+                reference_ctx.is_a?(Span)
 
-          parent = reference_ctx if parent.nil?
+            parent = reference_ctx if parent.nil?
 
-          if reference.type == OpenTracing::Reference.CHILD_OF
-            parents << reference_ctx.span_id
-          elsif reference.type == OpenTracing::Reference.FOLLOWS_FROM
-            follows << reference_ctx.span_id
+            if reference.type == OpenTracing::Reference.CHILD_OF
+              parents << reference_ctx.span_id
+            elsif reference.type == OpenTracing::Reference.FOLLOWS_FROM
+              follows << reference_ctx.span_id
+            end
           end
         end
       end
 
       if parent.nil? || !parent.trace?
-        if !ignore_active_span && !@active_span.nil?
-          parents << @active_span.span_id
-          trace_id = @active_span.trace_id
+        if !ignore_active_span && !active_span.nil?
+          parents << active_span.span_id
+          trace_id = active_span.trace_id
           span_id = SecureRandom.uuid
         else
           trace_id = SecureRandom.uuid
           span_id = trace_id
         end
-        baggage.update(parent.baggage) if parent && parent.baggage
+        baggage.update(parent.baggage) if parent&.baggage
       else
         trace_id = parent.trace_id
         span_id = SecureRandom.uuid
@@ -127,7 +126,7 @@ module WavefrontOpentracing
       #   If specified, the `references` parameter must be omitted.
       # @param references [List of Opentracing.Reference] (Optional) :
       #   references that identify one or more parent :class:`SpanContext`.
-      # @param tags [List of pair] (Optional) : List of tags
+      # @param tags [Hash] (Optional) : List of tags
       # @param start_time [Float] (Optional) : Span start time as a unix timestamp
       # @param ignore_active_span [Boolean] : An explicit flag that ignores
       # the current active `Scope` and creates a root `Span`.
@@ -141,8 +140,7 @@ module WavefrontOpentracing
                         start_time: start_time,
                         ignore_active_span: ignore_active_span
                        )
-      @active_span = span
-      @scope_manager.activate(span, finish_on_close: finish_on_close)
+      scope_manager.activate(span, finish_on_close: finish_on_close)
     end
 
     def inject(span_context, format, carrier)
@@ -154,7 +152,6 @@ module WavefrontOpentracing
 
       propagator = @registry.get(format)
       raise StandardError, 'Invalid format ' + format.to_s unless propagator
-
       span_context = span_context.context if span_context.is_a?(WavefrontOpentracing::Span)
       unless span_context.is_a?(WavefrontOpentracing::SpanContext)
         raise TypeError, 'Expecting Wavefront SpanContext, not ' + span_context.class.to_s
@@ -184,6 +181,14 @@ module WavefrontOpentracing
       # Report span through the reporter.
       # @param span [Span] : Wavefront Span instance.
       @reporter.report(span)
+    end
+
+    # @return [Span, nil] the active span. This is a shorthand for
+    # `scope_manager.active.span`, and nil will be returned if
+    # Scope#active is nil.
+    def active_span
+      scope = scope_manager.active
+      scope.span if scope
     end
   end
 end

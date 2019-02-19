@@ -21,7 +21,6 @@ module Reporting
 
       @sender = client
       @source = source
-#      super(source: source)
     end
 
     def report(wavefront_span)
