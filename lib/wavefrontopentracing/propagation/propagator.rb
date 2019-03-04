@@ -2,25 +2,20 @@
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
-
 module Propagation
-
+  @abstract
   class Propagator
 
-    def inject(_span_context, _carrier)
-      # Inject the given context into the given carrier.
-      # @param span_context [SpanContext]: The span context to serialize
-      # @param carrier [Carrier]: The carrier to inject the span context into
+    # Inject the given context into the given carrier.
+    #
+    # @param span_context [SpanContext] The span context to serialize
+    # @param carrier [Carrier] The carrier to inject the span context into
+    def inject(span_context, carrier); raise NotImplementedError end
 
-      raise NotImplementedError
-    end
-
-    def extract(_carrier)
-      # Extract Wavefront span context from the given carrier.
-      # @param carrier [Carrier]: The carrier to extract the span context from
-      # @return [WavefrontSpanContext]: Extracted Wavefront Span Context
-
-      raise NotImplementedError
-    end
+    # Extract Wavefront span context from the given carrier.
+    #
+    # @param carrier [Carrier] The carrier to extract the span context from
+    # @return [WavefrontSpanContext] Extracted Wavefront Span Context
+    def extract(carrier); raise NotImplementedError end
   end
 end

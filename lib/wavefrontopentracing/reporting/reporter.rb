@@ -1,34 +1,27 @@
-# Abstract Class of Reporter.
+# Wavefront Opentracing Reporter
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
 module Reporting
-
-  # Wavefront Opentracing
+  # @abstract Abstract Class of Reporter.
   class Reporter
-    # Wavefront Opentracing Reporter
-    def initialize(source: nil)
-      # Construct reporter.
-      # @param source [String]: Source of the reporter
 
+    # Construct reporter.
+    #
+    # @param source [String] Source of the reporter.
+    def initialize(source: nil)
       @source = source
     end
 
-    def report(span)
-      # Report tracing span.
-      # @param wavefront_span [Span]: Wavefront span to be reported
-      raise NotImplementedError
-    end
+    # Report tracing span.
+    #
+    # @param span [Span] Wavefront span to be reported
+    def report(span); raise NotImplementedError end
 
-    def failure_count
-      # Get failure count of the reporter.
-      # @return [int]: Failure count
-      raise NotImplementedError
-    end
+    # Get failure count of the reporter.
+    def failure_count; raise NotImplementedError end
 
-    def close
-      # Close the reporter
-      raise NotImplementedError
-    end
+    # Close the reporter
+    def close; raise NotImplementedError end
   end
 end

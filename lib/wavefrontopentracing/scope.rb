@@ -3,25 +3,24 @@
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
 module WavefrontOpentracing
-  # Scope represents an Wavefront OpenTracing Scope
   class Scope
-
-    def initialize(span, scope_stack, finish_on_close:)
-      # Construct Wavefront Opentracing Scope.
-      # @param span [WavefrontSpan] : Wavefront Span.
-      # @param scope_stock [ScopeStack] : Thread identifier
-      # @param finish_on_close [Boolean] : close the scope if true.
-
-      @span = span
-      @scope_stack = scope_stack
-      @finish_on_close = finish_on_close
-      @closed = false
-    end
 
     # Return the Span scoped by this Scope
     #
     # @return [Span]
     attr_reader :span
+
+    # Construct the Wavefront `Scope`.
+    #
+    # @param span [WavefrontSpan] Wavefront Span.
+    # @param scope_stack [ScopeStack] Thread identifier
+    # @param finish_on_close [Boolean] Close the scope if true.
+    def initialize(span, scope_stack, finish_on_close:)
+      @span = span
+      @scope_stack = scope_stack
+      @finish_on_close = finish_on_close
+      @closed = false
+    end
 
     # Close scope
     #

@@ -13,6 +13,7 @@ class TracerTest < Minitest::Test
                                    custom_tags: {"custom_k" => "custom_v"})
   end
 
+  # Test tracer inject and extract functionalities
   def test_inject_extract
     tracer = WavefrontOpentracing::Tracer.new(Reporting::ConsoleReporter.new, TracerTest.app_tags)
     span = tracer.start_span('test_tracer')
@@ -27,8 +28,8 @@ class TracerTest < Minitest::Test
     assert_equal("mobile", ctx.get_baggage_item("request_type"))
   end
 
+  # Test Active Span.
   def test_active_span
-    # Test Active Span.
     tracer = WavefrontOpentracing::Tracer.new(Reporting::ConsoleReporter.new, TracerTest.app_tags)
     span = tracer.start_span("test_op_1")
     assert span
@@ -39,8 +40,8 @@ class TracerTest < Minitest::Test
     assert_nil scope.close
   end
 
+  # Test Global Tags.
   def test_global_tags
-    # Test Global Tags.
     global_tags = {"foo1" => "bar1", "foo2" => "bar2"}
     tracer = WavefrontOpentracing::Tracer.new(Reporting::ConsoleReporter.new, TracerTest.app_tags, global_tags)
     span = tracer.start_span("test_op" , tags: {"foo3" => "bar3"})
@@ -62,8 +63,8 @@ class TracerTest < Minitest::Test
     tracer.close
   end
 
+  # Test Global Multi-valued Tags.
   def test_global_multi_valued_tags
-    # Test Global Multi-valued Tags.
     global_tags = {"key1" => "val1", "key1" => "val2"}
     tracer = WavefrontOpentracing::Tracer.new(Reporting::ConsoleReporter.new, TracerTest.app_tags, global_tags)
     span = tracer.start_span("test_op")

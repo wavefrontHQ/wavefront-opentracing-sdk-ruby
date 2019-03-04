@@ -13,8 +13,8 @@ class SpanTest < Minitest::Test
                                    custom_tags: {"custom_k" => "custom_v"})
   end
 
+  # Test Ignore Active Span.
   def test_ignore_active_span
-    # Test Ignore Active Span.
     tracer = WavefrontOpentracing::Tracer.new(Reporting::ConsoleReporter.new, SpanTest.app_tags)
     scope = tracer.start_active_span('test_op')
     assert scope
@@ -39,8 +39,8 @@ class SpanTest < Minitest::Test
     tracer.close
   end
 
+  # test Multi-valued Tags.
   def test_multi_valued_tags
-    # test Multi-valued Tags.
     tracer = WavefrontOpentracing::Tracer.new(Reporting::ConsoleReporter.new, SpanTest.app_tags)
     span = tracer.start_span("test_op", tags: {"key1" => "val1", "key2" => "val2"})
     assert span

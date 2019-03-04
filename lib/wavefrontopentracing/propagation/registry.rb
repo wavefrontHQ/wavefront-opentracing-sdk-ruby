@@ -8,7 +8,7 @@ require_relative 'http'
 
 module Propagation
   # Registry of available propagators.
-  class Registry < Propagator
+  class Registry
 
     def initialize
       # Construct propagator registry.

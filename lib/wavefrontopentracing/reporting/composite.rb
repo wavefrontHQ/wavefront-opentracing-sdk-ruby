@@ -1,44 +1,44 @@
-# Composite Reporter
+# Composite Reporter to report same span data to multiple reporters
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
 require_relative 'reporter'
 
 module Reporting
-
-  # Composite Reporter
+  # Composite Reporter can send same span data to multiple reporters
+  # at the same time, such as
+  # `WavefrontSpanReporter` - for `via_proxy` ingestion of data
+  # `WavefrontSpanReporter` - for `direct_ingestion` of data
+  # `ConsoleReporter` - to print data on console
   class CompositeReporter < Reporter
 
-    # Used to create multiple reporters, such as create a console
-    # reporter and Wavefront direct reporter at the same time.
-
+    # Construct the `CompositeReporter`
+    #
+    # @param reporters [<Reporter>] Reporters of composite reporter.
     def initialize(*reporters)
-      # Construct composite reporter
-      # @param reporters [Reporter]: Reporters of composite reporter
       @reporters = reporters
     end
 
+    # Each reporter report data.
+    # @param wavefront_span [Span] Wavefront span to be reported.
     def report(wavefront_span)
-      # Each reporter report data.
-      # @param wavefront_span: Wavefront span to be reported
-
       @reporters.each do |rep|
         rep.report(wavefront_span)
       end
     end
 
+    # Total failure count of all reporters
+    # @return [Integer] Total failure count
     def failure_count
-      # Total failure count of all reporters
-      # @return [int]: Total failure count
       total_count = 0
       @reporters.each do |rep|
         total_count += rep.failure_count
       end
-      reporter
+      total_count
     end
 
+    # Close all reporters inside the composite reporter.
     def close
-      # Close all reporters inside the composite reporter.
       @reporters.each &:close
     end
   end

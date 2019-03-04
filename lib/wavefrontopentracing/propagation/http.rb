@@ -5,8 +5,5 @@
 require_relative 'textmap'
 
 module Propagation
-
-  # HTTP Propagator
-  class HTTPPropagator < TextMapPropagator
-  end
+  HTTPPropagator = Class.new(TextMapPropagator)
 end

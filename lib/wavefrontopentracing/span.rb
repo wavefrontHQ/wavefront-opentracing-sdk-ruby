@@ -4,25 +4,44 @@
 
 require 'concurrent'
 require 'time'
+require 'wavefront/client/common/utils'
 require_relative 'span_context'
 
 module WavefrontOpentracing
-  # Wavefront Span
   class Span
 
-    attr_reader :context, :operation_name, :start_time, :parents, :duration_time, :follows, :tags
+    # @return [SpanContext] provides wavefront span context
+    attr_reader :context
+    # @return [String] provides span operation name
+    attr_reader :operation_name
+    # @return [Integer] provides span start time
+    attr_reader :start_time
+    # @return [<UUID>] provides a list of UUID's of parents span
+    attr_reader :parents
+    # @return [Integer] provides span duration
+    attr_reader :duration_time
+    # @return [<UUID>] provides a list of UUID's of follows span
+    attr_reader :follows
+    # @return [Hash] provides a list of tags of span
+    attr_reader :tags
 
-    def initialize(tracer, operation_name, context, start_time, parents, follows, tags)
-      # Construct Wavefront Span.
-      # @param tracer [Tracer]: Tracer that create this span
-      # @param operation_name [String]: Operation Name
-      # @param context [WavefrontSpanContext]: Span Context
-      # @param start_time [time.time()]: an explicit Span start time as a unix
-      #                                  timestamp per
-      # @param parents [uuid.UUID]: List of UUIDs of parents span
-      # @param follows [uuid.UUID]: List of UUIDs of follows span
-      # @param tags [Hash]: initial key:value tags (per set_tag) of the Span
-      
+    # Construct the Wavefront Span.
+    #
+    # @param tracer [Tracer] Tracer that create this span
+    # @param operation_name [String] Operation Name
+    # @param context [WavefrontSpanContext] Span Context
+    # @param start_time [Integer] an explicit Span start time as a unix
+    #   timestamp
+    # @param parents [UUID] List of UUIDs of parents span
+    # @param follows [UUID] List of UUIDs of follows span
+    # @param tags [Hash] List of tags
+    def initialize(tracer,
+                   operation_name,
+                   context,
+                   start_time,
+                   parents,
+                   follows,
+                   tags)
       @tracer = tracer
       @context = context
       @operation_name = operation_name
@@ -35,50 +54,51 @@ module WavefrontOpentracing
       @update_lock = Mutex.new
     end
 
+    # Set tag of the span.
+    #
+    # @param key [String] the key of the tag
+    # @param value [String] the value of the tag. If it's not a String
+    #   it will be encoded with to_s
     def set_tag(key, value)
-      # Set tag of the span.
-      # @param key [String] the key of the tag
-      # @param value [String] the value of the tag. If it's not a String
-      # it will be encoded with to_s
-
       @update_lock.synchronize do
-        @tags.update( {key => value.to_s} ) unless is_blank(key) && value
+        unless Wavefront::WavefrontUtil.is_blank(key) && value.nil?
+          @tags.update(key => value.to_s)
+        end
       end
     end
 
-    def set_baggage_item(key, value)
-      # Replace span context with the updated dict of baggage.
-      # @param key [String]: key of the baggage item
-      # @param value [String]: value of the baggage item
-      # @return [WavefrontSpan]: span itself
+    # Get baggage item for the given key.
+    #
+    # @param key [String] Key of baggage item
+    # @return [String] Baggage item value
+    def get_baggage_item(key)
+      @context.get_baggage_item(key)
+    end
 
+    # Replace span context with the updated dict of baggage.
+    #
+    # @param key [String] key of the baggage item
+    # @param value [String] value of the baggage item
+    def set_baggage_item(key, value)
       context_with_baggage = @context.with_baggage_item(key, value)
       @update_lock.synchronize do
         @context = context_with_baggage 
       end
     end
 
-    def get_baggage_item(key)
-      # Get baggage item with given key.
-      # @param key [String]: Key of baggage item
-      # @return [String]: Baggage item value
-
-      @context.get_baggage_item(key)
-    end
-
+    # Update operation name.
+    #
+    # @param operation_name [String] Operation name.
     def set_operation_name(operation_name)
-      # Update operation name.
-      # @param operation_name [String] : Operation name.
-
       @update_lock.synchronize do
         @operation_name = operation_name
       end
     end
 
+    # Call finish to finish current span, and report it.
+    #
+    # @param end_time [Integer] finish time, unix timestamp.
     def finish(end_time = nil)
-      # Call finish to finish current span, and report it.
-      # @param end_time [Float]: finish time, unix timestamp.
-
       if !end_time.nil?
         do_finish(end_time.to_i - @start_time)
       else
@@ -86,11 +106,11 @@ module WavefrontOpentracing
       end
     end
 
+    # Mark span as finished and send it via reporter.
+    #
+    # @param duration_time [Integer] Duration time in seconds
+    # Thread.lock to be implemented
     def do_finish(duration_time)
-      # Mark span as finished and send it via reporter.
-      # @param duration_time [Float]: Duration time in seconds
-      # Thread.lock to be implemented
-
       @update_lock.synchronize do
         return if @finished
 
@@ -100,24 +120,24 @@ module WavefrontOpentracing
       @tracer.report_span(self)
     end
 
+    # Get trace id.
+    #
+    # @return [UUID] Wavefront Trace ID
     def trace_id
-      # Get trace id.
-      # @return [uuid.UUID]: Wavefront Trace ID
-
       @context.trace_id
     end
 
+    # Get span id.
+    #
+    # @return [UUID] Wavefront Span ID
     def span_id
-      # Get span id.
-      # @return [uuid.UUID]: Wavefront Span ID
-
       @context.span_id
     end
 
+    # Get tags in list format.
+    #
+    # @return [List of pair] list of tags
     def get_tags_as_list
-      # Get tags in list format.
-      # @return [List of pair] : list of tags
-
       return [] unless @tags
 
       tags_list = []
@@ -127,20 +147,22 @@ module WavefrontOpentracing
       tags_list
     end
 
+    # Get tags in map format.
+    #
+    # @return [Hash] tags in map format
     def get_tags_as_map
-      # Get tags in map format.
-      # @return: tags in map format: {key: [list_of_val]}
-
       @tags
     end
 
-    private
-
-    def is_blank(value)
-      # Check if the given value is blank or not
-      # @return [Boolean] : true: if not nil and not empty
-      #                     false: if nil or empty
-      value.nil? || value.strip.empty? ? true : false
+    def log_kv(timestamp: Time.now, **args)
+      args = {} if args.nil?
+      record = {
+        timestamp: timestamp.to_i,
+        fields: args.to_a.map do |key, value|
+          { key.to_s => value.to_s }
+        end
+      }
+      puts "Span: Logs: #{record}"
     end
   end
 end

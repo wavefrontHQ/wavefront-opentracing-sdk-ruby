@@ -1,19 +1,18 @@
-# Console Reporter.
+# Wavefront Console Reporter.
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
+require 'wavefront/client'
 require_relative 'reporter'
-require_relative '../../../util/utils'
 
 module Reporting
-
-  # Console Reporter
+  # Console Reporter to print span data to console.
   class ConsoleReporter < Reporter
 
-    # Used to print span data to console.
+    # Print span data to console
+    #
+    # @param wavefront_span [Span] Wavefront span to be reported.
     def report(wavefront_span)
-      # Print span data to console
-      # @param wavefront_span [Span] : Wavefront span to be reported.
       line_data = Wavefront::WavefrontUtil.tracing_span_to_line_data(
         wavefront_span.operation_name,
         (wavefront_span.start_time * 1000).to_i,
@@ -27,7 +26,6 @@ module Reporting
         nil,
         'unknown'
       )
-      print(line_data)
     end
 
     def failure_count
