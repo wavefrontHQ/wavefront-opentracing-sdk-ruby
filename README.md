@@ -7,7 +7,7 @@ The Wavefront by VMware OpenTracing SDK for Ruby is a library that provides open
 Ruby 2.6 and above are supported.
 
 ```bash
-pip install wavefront-opentracing-sdk-ruby 
+gem install wavefront-opentracing-sdk 
 ```
 ## Set Up a Tracer
 

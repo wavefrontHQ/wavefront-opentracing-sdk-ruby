@@ -1,5 +1,5 @@
-require 'test_helper'
 require 'wavefront/client'
+require_relative 'test_helper'
 require_relative '../lib/wavefrontopentracing/reporting/wavefront'
 require_relative '../lib/wavefrontopentracing/reporting/console'
 require_relative '../lib/wavefrontopentracing/reporting/composite'

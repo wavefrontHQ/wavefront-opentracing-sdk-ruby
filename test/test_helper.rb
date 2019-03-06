@@ -1,9 +1,10 @@
 require 'simplecov'
 require 'simplecov-console'
-SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
-  SimpleCov::Formatter::HTMLFormatter,
-  SimpleCov::Formatter::Console,
-]
+formatters = [SimpleCov::Formatter::HTMLFormatter,
+              SimpleCov::Formatter::Console]
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter.new(
+  formatters
+)
 SimpleCov.minimum_coverage 100
 SimpleCov.start
 

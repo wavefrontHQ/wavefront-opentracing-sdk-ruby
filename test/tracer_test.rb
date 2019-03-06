@@ -1,4 +1,4 @@
-require 'test_helper'
+require_relative 'test_helper'
 require_relative '../lib/wavefrontopentracing/tracer'
 require_relative '../lib/wavefrontopentracing/reporting/console'
 require_relative '../util/application_tags'
