@@ -3,7 +3,7 @@
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
 module Propagation
-  @abstract
+  # @abstract
   class Propagator
 
     # Inject the given context into the given carrier.

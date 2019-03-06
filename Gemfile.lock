@@ -47,6 +47,7 @@ DEPENDENCIES
   rake (~> 11.3)
   rspec (~> 3.0)
   simplecov (~> 0.16)
+  simplecov-console (~> 0.4.2)
   timecop (~> 0.8.0)
   wavefrontopentracing!
 
