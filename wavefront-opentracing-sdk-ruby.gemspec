@@ -27,5 +27,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rake', '~> 11.3'
   spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'simplecov', '~> 0.16'
+  spec.add_development_dependency 'simplecov-console', '~> 0.4.2'
   spec.add_development_dependency 'timecop', '~> 0.8.0'
 end
