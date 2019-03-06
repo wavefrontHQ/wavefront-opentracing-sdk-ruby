@@ -6,6 +6,12 @@ rvm:
 before_install:
   - gem install test-unit
   - gem install bundler -v 2.0.1
+  - gem install simplecov
+  - gem install concurrent-ruby
+  - gem install opentracing -v 0.5.0
+  - gem install bump
+  - gem install minitest
+#  - gem install wavefront-client
 
 script:
   - ruby test/tracer_test.rb
