@@ -26,6 +26,7 @@ module Reporting
         nil,
         'unknown'
       )
+      print(line_data)
     end
 
     def failure_count
