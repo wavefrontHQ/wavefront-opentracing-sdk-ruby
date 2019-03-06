@@ -3,14 +3,14 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require_relative 'lib/wavefrontopentracing/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'wavefrontopentracing'
+  spec.name = 'wavefront-opentracing-sdk'
   spec.version = WavefrontOpentracing::VERSION
-  spec.authors = ['wavefrontopentracing']
-  spec.email = ['support@wavefront.com']
+  spec.authors = ['wavefront-opentracing-sdk']
+  spec.email = ['gangadhar@vmware.com']
 
-  spec.summary = 'Wavefront OpenTracing Ruby bindings'
+  spec.summary = %q{Wavefront OpenTracing SDK for Ruby}
   spec.homepage = 'https://github.com/wavefrontHQ/wavefront-opentracing-sdk-ruby'
-  spec.license = 'Apache'
+  spec.license = 'Apache-2.0'
 
   spec.files = `git ls-files -z`.split("\x0").reject {|f| f.match(%r{^(test|spec|features)/})}
   spec.require_paths = ['lib']
