@@ -1,0 +1,17 @@
+language: ruby
+
+rvm:
+  - 2.6
+
+before_install:
+  - gem install test-unit
+  - gem install bundler -v 2.0.1
+
+script:
+  - ruby test/tracer_test.rb
+  - ruby test/span_test.rb
+  - ruby test/reporter_test.rb
+
+notifications:
+  email:
+    - gangadhar@vmware.com
