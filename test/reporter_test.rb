@@ -17,7 +17,7 @@ class ReporterTest < Minitest::Test
   end
 
   def test_composite_reporter
-    proxy_host = '10.192.167.61'
+    proxy_host = '<wavefront_proxy_ip>'
     metrics_port = 2878
     distribution_port = 40000
     tracing_port = 30000
@@ -33,8 +33,8 @@ class ReporterTest < Minitest::Test
                                                        source: "proxy")
 
     direct_client = Wavefront::WavefrontDirectIngestionClient.new(
-                      'https://nimba.wavefront.com',
-                      '41012cb0-b65c-4f99-997d-c56da68833af')
+                      'https://<cluster>.wavefront.com',
+                      '<api_token>')
 
     dreporter = Reporting::WavefrontSpanReporter.new(client: direct_client,
                                                        source: "direct")

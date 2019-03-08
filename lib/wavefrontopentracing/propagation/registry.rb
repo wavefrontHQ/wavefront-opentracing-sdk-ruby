@@ -21,7 +21,7 @@ module Propagation
 
     def get(format)
       # Get propagator of certain format.
-      # @param format [OpenTracing::FORMAT] : Format a propagator
+      # @param format [OpenTracing::FORMAT] Format a propagator
       # @return Propagator of given format
 
       @propagators[format]
@@ -29,8 +29,8 @@ module Propagation
 
     def register(format, propagator)
       # Register propagator.
-      # @param format [OpenTracing::FORMAT] : Format a propagator
-      # @param propagator [Propagator] : Propagator to be registered.
+      # @param format [OpenTracing::FORMAT] Format a propagator
+      # @param propagator [Propagator] Propagator to be registered.
 
       @propagators.merge!(format => propagator)
     end
