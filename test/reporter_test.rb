@@ -11,8 +11,8 @@ class ReporterTest < Minitest::Test
   def self.app_tags
     Wavefront::ApplicationTags.new("wft2-shopping",
                                    "shopping-service",
-                                   cluster: "virunga",
-                                   shard: "shopping-shard",
+                                   cluster: "us-west-2",
+                                   shard: "primary",
                                    custom_tags: {"size" => "XL", "color" => "black"})
   end
 

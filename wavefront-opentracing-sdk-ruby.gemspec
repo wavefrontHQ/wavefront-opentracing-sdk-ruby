@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.name = 'wavefront-opentracing-sdk'
   spec.version = WavefrontOpentracing::VERSION
   spec.authors = ['Gangadharaswamy']
-  spec.email = ['gangadhar@vmware.com']
+  spec.email = ['chitimba@wavefront.com']
 
   spec.summary = %q{Wavefront OpenTracing SDK for Ruby}
   spec.homepage = 'https://github.com/wavefrontHQ/wavefront-opentracing-sdk-ruby'

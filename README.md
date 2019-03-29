@@ -63,7 +63,7 @@ require 'wavefront/client/direct'
 wavefront_sender = Wavefront::WavefrontDirectIngestionClient.new('<wavefront-cluster>', '<API-Token>')
 # or
 # Wavefront sender for proxy
-# default values: metrics_port = 2878, distribution_port = 40000, tracing_port = 30000
+# default values: metrics_port = 2878, distribution_port = 2878, tracing_port = 30000
 # wavefront_sender = Wavefront::WavefrontProxyClient.new(<proxy_host_ip>, metrics_port, distribution_port, tracing_port)
 
 wf_span_reporter = WavefrontSpanReporter(
