@@ -14,7 +14,7 @@ module WavefrontOpentracing
     attr_reader :context
     # @return [String] provides span operation name
     attr_reader :operation_name
-    # @return [Integer] provides span start time
+    # @return [Time] provides span start time object
     attr_reader :start_time
     # @return [<UUID>] provides a list of UUID's of parents span
     attr_reader :parents
@@ -96,7 +96,7 @@ module WavefrontOpentracing
 
     # Call finish to finish current span, and report it.
     #
-    # @param end_time [Integer] finish time, unix timestamp.
+    # @param end_time [Time] finish time as Time.now().
     def finish(end_time = nil)
       if !end_time.nil?
         do_finish(((end_time - @start_time).to_f * 1000.0).to_i)
@@ -107,7 +107,7 @@ module WavefrontOpentracing
 
     # Mark span as finished and send it via reporter.
     #
-    # @param duration_time [Integer] Duration time in seconds
+    # @param duration_time [Integer] Duration time in milliseconds
     # Thread.lock to be implemented
     def do_finish(duration_time)
       @update_lock.synchronize do
