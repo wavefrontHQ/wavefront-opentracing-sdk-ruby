@@ -30,8 +30,7 @@ module WavefrontOpentracing
     # @param tracer [Tracer] Tracer that create this span
     # @param operation_name [String] Operation Name
     # @param context [WavefrontSpanContext] Span Context
-    # @param start_time [Integer] an explicit Span start time as a unix
-    #   timestamp
+    # @param start_time [Time] an explicit Span start time as Time.now()
     # @param parents [UUID] List of UUIDs of parents span
     # @param follows [UUID] List of UUIDs of follows span
     # @param tags [Hash] List of tags
@@ -45,7 +44,7 @@ module WavefrontOpentracing
       @tracer = tracer
       @context = context
       @operation_name = operation_name
-      @start_time = start_time.to_i
+      @start_time = start_time
       @duration_time = 0
       @parents = parents
       @follows = follows
@@ -100,9 +99,9 @@ module WavefrontOpentracing
     # @param end_time [Integer] finish time, unix timestamp.
     def finish(end_time = nil)
       if !end_time.nil?
-        do_finish(end_time.to_i - @start_time)
+        do_finish(((end_time - @start_time).to_f * 1000.0).to_i)
       else
-        do_finish(Time.now.to_i - @start_time)
+        do_finish(((Time.now - @start_time).to_f * 1000.0).to_i)
       end
     end
 
@@ -157,7 +156,7 @@ module WavefrontOpentracing
     def log_kv(timestamp: Time.now, **args)
       args = {} if args.nil?
       record = {
-        timestamp: timestamp.to_i,
+        timestamp: (timestamp.to_f * 1000.0).to_i,
         fields: args.to_a.map do |key, value|
           { key.to_s => value.to_s }
         end

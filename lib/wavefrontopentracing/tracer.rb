@@ -43,7 +43,7 @@ module WavefrontOpentracing
     # @param references [List of Opentracing.Reference] (Optional)
     #   references that identify one or more parent `SpanContext`.
     # @param tags [Hash] (Optional) List of tags
-    # @param start_time [Integer] (Optional) Span start time as a unix timestamp
+    # @param start_time [Time] (Optional) Span start time as Time.now()
     # @param ignore_active_span [Boolean] An explicit flag that ignores
     #   the current active `Scope` and creates a root `Span`.
     # @return [Span] An already started Wavefront Span instance.
@@ -58,7 +58,7 @@ module WavefrontOpentracing
       baggage = {}
       tags ||= {}
       tags.update(@tags)
-      start_time ||= Time.now.to_i
+      start_time ||= Time.now
 
       parent = nil
       if !child_of.nil?
@@ -116,7 +116,7 @@ module WavefrontOpentracing
     # @param references [List of Opentracing.Reference] (Optional)
     #   references that identify one or more parent `SpanContext`.
     # @param tags [Hash] (Optional) List of tags
-    # @param start_time [Integer] (Optional) Span start time as a unix timestamp
+    # @param start_time [Time] (Optional) Span start time as Time.now()
     # @param ignore_active_span [Boolean] An explicit flag that ignores
     #   the current active `Scope` and creates a root `Span`.
     # @param finish_on_close [Boolean] Whether span should be automatically
