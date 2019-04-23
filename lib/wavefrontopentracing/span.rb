@@ -14,7 +14,7 @@ module WavefrontOpentracing
     attr_reader :context
     # @return [String] provides span operation name
     attr_reader :operation_name
-    # @return [Integer] provides span start time
+    # @return [Time] provides span start time object
     attr_reader :start_time
     # @return [<UUID>] provides a list of UUID's of parents span
     attr_reader :parents
@@ -30,8 +30,7 @@ module WavefrontOpentracing
     # @param tracer [Tracer] Tracer that create this span
     # @param operation_name [String] Operation Name
     # @param context [WavefrontSpanContext] Span Context
-    # @param start_time [Integer] an explicit Span start time as a unix
-    #   timestamp
+    # @param start_time [Time] an explicit Span start time as Time.now()
     # @param parents [UUID] List of UUIDs of parents span
     # @param follows [UUID] List of UUIDs of follows span
     # @param tags [Hash] List of tags
@@ -45,7 +44,7 @@ module WavefrontOpentracing
       @tracer = tracer
       @context = context
       @operation_name = operation_name
-      @start_time = start_time.to_i
+      @start_time = start_time
       @duration_time = 0
       @parents = parents
       @follows = follows
@@ -97,18 +96,18 @@ module WavefrontOpentracing
 
     # Call finish to finish current span, and report it.
     #
-    # @param end_time [Integer] finish time, unix timestamp.
+    # @param end_time [Time] finish time as Time.now().
     def finish(end_time = nil)
       if !end_time.nil?
-        do_finish(end_time.to_i - @start_time)
+        do_finish(((end_time - @start_time).to_f * 1000.0).to_i)
       else
-        do_finish(Time.now.to_i - @start_time)
+        do_finish(((Time.now - @start_time).to_f * 1000.0).to_i)
       end
     end
 
     # Mark span as finished and send it via reporter.
     #
-    # @param duration_time [Integer] Duration time in seconds
+    # @param duration_time [Integer] Duration time in milliseconds
     # Thread.lock to be implemented
     def do_finish(duration_time)
       @update_lock.synchronize do
@@ -157,7 +156,7 @@ module WavefrontOpentracing
     def log_kv(timestamp: Time.now, **args)
       args = {} if args.nil?
       record = {
-        timestamp: timestamp.to_i,
+        timestamp: (timestamp.to_f * 1000.0).to_i,
         fields: args.to_a.map do |key, value|
           { key.to_s => value.to_s }
         end

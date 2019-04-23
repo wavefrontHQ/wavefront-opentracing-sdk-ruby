@@ -29,8 +29,8 @@ module Reporting
     def report(wavefront_span)
       @sender.send_span(
         wavefront_span.operation_name,
-        (wavefront_span.start_time * 1000).to_i,
-        (wavefront_span.duration_time * 1000).to_i,
+        (wavefront_span.start_time.to_f * 1000).to_i,
+        wavefront_span.duration_time,
         @source,
         wavefront_span.trace_id,
         wavefront_span.span_id,
