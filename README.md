@@ -1,4 +1,4 @@
-# wavefront-opentracing-sdk-ruby [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-opentracing-sdk-ruby.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-opentracing-sdk-ruby) [![OpenTracing Badge](https://img.shields.io/badge/OpenTracing-enabled-blue.svg)](http://opentracing.io)
+# wavefront-opentracing-sdk-ruby [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-opentracing-sdk-ruby.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-opentracing-sdk-ruby) [![OpenTracing Badge](https://img.shields.io/badge/OpenTracing-enabled-blue.svg)](https://opentracing.io)
 
 The Wavefront by VMware OpenTracing SDK for Ruby is a library that provides open tracing support for Wavefront.
 

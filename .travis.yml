@@ -1,23 +1,11 @@
 language: ruby
 
 rvm:
+  - 2.3
   - 2.6
 
 before_install:
-  - gem install test-unit
-  - gem install bundler -v 2.0.1
-  - gem install simplecov -v 0.16.1
-  - gem install simplecov-console -v 0.4.2
-  - gem install concurrent-ruby
-  - gem install opentracing -v 0.5.0
-  - gem install bump
-  - gem install minitest
-  - gem install wavefront-client
-
-script:
-  - ruby test/tracer_test.rb
-  - ruby test/span_test.rb
-  - ruby test/reporter_test.rb
+  - gem install bundler -v 2.0.1 --no-document
 
 notifications:
   email:

@@ -9,9 +9,14 @@ module Reporting
   # Wavefront Span Reporter to report span data either via_proxy or
   # direct_ingestion through wavefront client instance to Wavefront server.
   class WavefrontSpanReporter < Reporter
+    @logger = Logger.new(STDERR)  # class instance var
+    @logger.level = Logger::WARN
 
-    logger = Logger.new(STDOUT)
-    logger.level = Logger::WARN
+    # @return [String] Source of the reporter.
+    attr_reader :source
+
+    # @return [WavefrontProxyClient or WavefrontDirectClient] Wavefront Client
+    attr_reader :sender
 
     # Construct Wavefront Span Reporter
     #
@@ -37,12 +42,10 @@ module Reporting
         wavefront_span.parents,
         wavefront_span.follows,
         wavefront_span.tags,
-        span_logs = nil
+        nil # span_logs
       )
-      rescue ArgumentError, TypeError => exception
-        logger.add(Logger::ERROR) do
-          'Invalid Sender, no valid send_span function.'
-        end
+    rescue ArgumentError, TypeError => exception
+      @logger.add(Logger::ERROR, 'Invalid Sender, no valid send_span function.')
       raise exception
     end
 

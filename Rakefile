@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bundler/gem_tasks'
 require 'rake/testtask'
 require 'rubocop/rake_task'
@@ -8,10 +10,9 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList['test/**/*_test.rb']
 end
 
-RuboCop::RakeTask.new(:rubocop)
-
-if RUBY_PLATFORM == 'java'
-  task default: :test
-else
-  task default: %i[rubocop test]
+RuboCop::RakeTask.new(:rubocop) do |t|
+  t.options = ['--fail-level', 'W', '--display-only-fail-level-offenses']
+  t.fail_on_error = false # Don't abort on rubocop failures
 end
+
+task default: %i[rubocop test]
