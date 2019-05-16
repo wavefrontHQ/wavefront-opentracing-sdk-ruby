@@ -6,6 +6,8 @@ require 'opentracing'
 require 'securerandom'
 require 'time'
 require 'wavefront/client'
+require 'wavefront/metrics'
+require 'wavefront/client/common/heartbeater'
 require_relative 'propagation/registry'
 require_relative 'reporting/wavefront'
 require_relative 'scope_manager'
@@ -16,22 +18,54 @@ module WavefrontOpentracing
   # Wavefront Tracer implementation defines the APIs to start Span,
   # to inject SpanContext to and extract SpanContext from a carrier.
   class Tracer
+    @logger = Logger.new(STDERR)
+    @logger.level = Logger::WARN
 
     # @return [ScopeManager] Provides access to the current ScopeManager.
     attr_reader :scope_manager
+
+    DURATION_SUFFIX = '.duration.micros'.freeze
+    ERROR_SUFFIX = '.error'.freeze
+    INVOCATION_SUFFIX = '.invocation'.freeze
+    TOTAL_TIME_SUFFIX = '.total_time.millis'.freeze
+    OPERATION_NAME_TAG = 'operationName'.freeze
+
+    WAVEFRONT_GENERATED_COMPONENT = 'wavefront-generated'.freeze
+    OPENTRACING_COMPONENT = 'opentracing'.freeze
+    RUBY_COMPONENT = 'ruby'.freeze
+
+    HEARBEAT_COMPONENTS = [
+      WAVEFRONT_GENERATED_COMPONENT,
+      OPENTRACING_COMPONENT,
+      RUBY_COMPONENT
+    ].freeze
 
     # Construct Wavefront Tracer
     #
     # @param reporter [Reporter] propagation reporter
     # @param application_tags [ApplicationTags] Application tags object
     # @param global_tags [Hash] Global tags for Tracer
-    def initialize(reporter, application_tags, global_tags = nil)
+    def initialize(reporter, application_tags, global_tags = nil, report_freq_millis = 1000)
       @reporter = reporter
       @tags = global_tags || {}
       @tags.update(application_tags.as_dict)
       @registry = Propagation::Registry.new
       @scope_manager = ScopeManager.new
+
+      @internal_reporter = nil
+      @heartbeater = nil
+      if !reporter.nil? && reporter.class == Reporting::WavefrontSpanReporter
+        begin
+        @app_service_prefix = "tracing.derived.#{application_tags.application}.#{application_tags.service}."
+        @internal_reporter = Reporters::Wavefront.new(@reporter.sender, application_tags, reporting_interval_sec: report_freq_millis / 1000.0, host: @reporter.source)
+        @heartbeater = Wavefront::HeartbeaterService.new(@reporter.sender, application_tags, HEARBEAT_COMPONENTS, @reporter.source)
+        rescue StandardError => e
+          @logger.add(Logger::ERROR, "Failed to create internal reporter. Derived metrics will be unavailable. #{e}\n\t#{e.backtrace.join("\n\t")}")
+          # Don't raise again as this isn't fatal
+        end
+      end
     end
+
 
     # Start and return a new `Span` representing a unit of work.
     #
@@ -153,7 +187,7 @@ module WavefrontOpentracing
         span_context.context if span_context.is_a?(Span)
       unless span_context.is_a?(SpanContext)
         raise TypeError,
-          "Expecting Wavefront SpanContext, not `#{span_context.class}`"
+          "Expecting Wavefront SpanContext, not '#{span_context.class}'"
       end
 
       propagator.inject(span_context, carrier)
@@ -166,13 +200,15 @@ module WavefrontOpentracing
     # @return [SpanContext] SpanContext extracted from 'carrier' or 'nil'.
     def extract(format, carrier)
       propagator = @registry.get(format)
-      raise ArgumentError, 'Invalid format #{format}' unless propagator
+      raise ArgumentError, "Invalid format #{format}" unless propagator
 
       propagator.extract(carrier)
     end
 
     # Close the reporter to close the tracer.
     def close
+      @heartbeater&.stop
+      @internal_reporter&.stop
       @reporter.close
     end
 
@@ -181,6 +217,25 @@ module WavefrontOpentracing
     # @param span [Span] Wavefront Span instance.
     def report_span(span)
       @reporter.report(span)
+    end
+
+    def report_derived_metrics(span)
+      return if @internal_reporter.nil?
+      point_tags = { OPERATION_NAME_TAG => span.operation_name }
+
+      invc_counter = "#{@app_service_prefix}#{span.operation_name}#{INVOCATION_SUFFIX}"
+      @internal_reporter.registry.counter(invc_counter, point_tags).inc
+
+      if span.tags.key?('error')
+        err_counter = "#{@app_service_prefix}#{span.operation_name}#{ERROR_SUFFIX}"
+        @internal_reporter.registry.counter(err_counter, point_tags).inc
+      end
+
+      time_counter = "#{@app_service_prefix}#{span.operation_name}#{TOTAL_TIME_SUFFIX}"
+      @internal_reporter.registry.counter(time_counter, point_tags).inc(span.duration_time.to_i)
+
+      dur_histogram = "#{@app_service_prefix}#{span.operation_name}#{DURATION_SUFFIX}"
+      @internal_reporter.registry.distribution(dur_histogram, point_tags).push(span.duration_time.to_i * 1000.0) # micros
     end
 
     # Return the active_span from scope_stack

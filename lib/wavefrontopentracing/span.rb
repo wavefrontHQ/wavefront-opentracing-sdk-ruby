@@ -117,6 +117,7 @@ module WavefrontOpentracing
         @finished = true
       end
       @tracer.report_span(self)
+      @tracer.report_derived_metrics(self)
     end
 
     # Get trace id.
