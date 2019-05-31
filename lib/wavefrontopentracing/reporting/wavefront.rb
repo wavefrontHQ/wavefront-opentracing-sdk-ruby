@@ -4,9 +4,10 @@
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
 
+require 'concurrent'
 require 'logger'
 require 'wavefront/client'
-require 'concurrent'
+require 'wavefront/client/internal-metrics/registry'
 
 require_relative 'reporter'
 
@@ -41,17 +42,31 @@ module Reporting
       @queue = SizedQueue.new(max_queue_size)
       @exec = Concurrent::SingleThreadExecutor.new
       @exec.post { report_task }
+
+      # internal metrics
+      @internal_store = ::Wavefront::InternalMetricsRegistry.new(::Wavefront::SDK_METRIC_PREFIX + '.opentracing.reporter', @application_tags)
+
+      @internal_store.gauge('queue.size') { @queue.size }
+      @internal_store.gauge('queue.remaining_capacity') { @queue.max - @queue.size }
+
+      @spans_received = @internal_store.counter('spans.received')
+      @spans_dropped = @internal_store.counter('spans.dropped')
+      @errors = @internal_store.counter('errors')
+
+      @internal_reporter = ::Wavefront::InternalReporter.new(@sender, @internal_store)
     end
 
     # Report span data via Wavefront Client.
     #
     # @param wavefront_span [Span] Wavefront Span to be reported.
     def report(wavefront_span)
+      @spans_received.inc # should count even if dropped
       @queue.push(wavefront_span, non_block = true)
-    rescue ClosedQueueError, ThreadError => e
-      # queue full/closed?
+    rescue ThreadError => e
+      @@logger.warn "Reporter - Queue exceeded max capacity(#{@queue.max}). Dropping spans..."
+      @spans_dropped.inc
     rescue StandardError => e
-      # other errors
+      @@logger.error "Unexpected Error: #{e.message}\n\t#{e.backtrace.join("\n\t")}"
     end
 
     # Get failure count from wavefront client.
@@ -97,7 +112,8 @@ module Reporting
             )
           end
         rescue StandardError => e
-          @@logger.error "#{e.message}\n\t" + e.backtrace.join("\n\t")
+          @errors.inc
+          @@logger.error "SpanReporter - Error sending span : #{e.message}\n\t" + e.backtrace.join("\n\t")
         end
       end
     ensure

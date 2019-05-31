@@ -4,7 +4,7 @@ The Wavefront by VMware OpenTracing SDK for Ruby is a library that provides open
 
 ## Requirements and Installation
 
-Ruby 2.6 and above are supported.
+Ruby 2.3 and above are supported.
 
 ```bash
 gem install wavefront-opentracing-sdk 
@@ -126,3 +126,6 @@ See the [context propagation documentation](https://github.com/wavefrontHQ/wavef
 ## RED Metrics
 
 See the [RED metrics documentation](https://github.com/wavefrontHQ/wavefront-opentracing-sdk-ruby/blob/master/docs/metrics.md) for details on the out-of-the-box metrics and histograms that are provided.
+
+## Monitoring the SDK
+See the [diagnostic metrics documentation](docs/internal_metrics.md) for details on the internal metrics that the SDK collects and reports to Wavefront.
