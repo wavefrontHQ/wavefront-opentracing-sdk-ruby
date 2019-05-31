@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Wavefront Span.
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
@@ -9,7 +11,6 @@ require_relative 'span_context'
 
 module WavefrontOpentracing
   class Span
-
     # @return [SpanContext] provides wavefront span context
     attr_reader :context
     # @return [String] provides span operation name
@@ -60,7 +61,7 @@ module WavefrontOpentracing
     #   it will be encoded with to_s
     def set_tag(key, value)
       @update_lock.synchronize do
-        unless Wavefront::WavefrontUtil.is_blank(key) && value.nil?
+        unless Wavefront::WavefrontUtil.blank?(key) && value.nil?
           @tags.update(key => value.to_s)
         end
       end
@@ -81,7 +82,7 @@ module WavefrontOpentracing
     def set_baggage_item(key, value)
       context_with_baggage = @context.with_baggage_item(key, value)
       @update_lock.synchronize do
-        @context = context_with_baggage 
+        @context = context_with_baggage
       end
     end
 

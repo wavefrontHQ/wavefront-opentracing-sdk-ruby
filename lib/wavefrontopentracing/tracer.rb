@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Wavefront Tracer.
 #
 # @author: Gangadharaswamy (gangadhar@vmware.com)
@@ -18,21 +20,21 @@ module WavefrontOpentracing
   # Wavefront Tracer implementation defines the APIs to start Span,
   # to inject SpanContext to and extract SpanContext from a carrier.
   class Tracer
-    @logger = Logger.new(STDERR)
-    @logger.level = Logger::WARN
+    @@logger = Logger.new(STDERR)
+    @@logger.level = Logger::WARN
 
     # @return [ScopeManager] Provides access to the current ScopeManager.
     attr_reader :scope_manager
 
-    DURATION_SUFFIX = '.duration.micros'.freeze
-    ERROR_SUFFIX = '.error'.freeze
-    INVOCATION_SUFFIX = '.invocation'.freeze
-    TOTAL_TIME_SUFFIX = '.total_time.millis'.freeze
-    OPERATION_NAME_TAG = 'operationName'.freeze
+    DURATION_SUFFIX = '.duration.micros'
+    ERROR_SUFFIX = '.error'
+    INVOCATION_SUFFIX = '.invocation'
+    TOTAL_TIME_SUFFIX = '.total_time.millis'
+    OPERATION_NAME_TAG = 'operationName'
 
-    WAVEFRONT_GENERATED_COMPONENT = 'wavefront-generated'.freeze
-    OPENTRACING_COMPONENT = 'opentracing'.freeze
-    RUBY_COMPONENT = 'ruby'.freeze
+    WAVEFRONT_GENERATED_COMPONENT = 'wavefront-generated'
+    OPENTRACING_COMPONENT = 'opentracing'
+    RUBY_COMPONENT = 'ruby'
 
     HEARBEAT_COMPONENTS = [
       WAVEFRONT_GENERATED_COMPONENT,
@@ -56,16 +58,15 @@ module WavefrontOpentracing
       @heartbeater = nil
       if !reporter.nil? && reporter.class == Reporting::WavefrontSpanReporter
         begin
-        @app_service_prefix = "tracing.derived.#{application_tags.application}.#{application_tags.service}."
-        @internal_reporter = Reporters::Wavefront.new(@reporter.sender, application_tags, reporting_interval_sec: report_freq_millis / 1000.0, host: @reporter.source)
-        @heartbeater = Wavefront::HeartbeaterService.new(@reporter.sender, application_tags, HEARBEAT_COMPONENTS, @reporter.source)
+          @app_service_prefix = "tracing.derived.#{application_tags.application}.#{application_tags.service}."
+          @internal_reporter = Reporters::Wavefront.new(@reporter.sender, application_tags, reporting_interval_sec: report_freq_millis / 1000.0, host: @reporter.source)
+          @heartbeater = Wavefront::HeartbeaterService.new(@reporter.sender, application_tags, HEARBEAT_COMPONENTS, @reporter.source)
         rescue StandardError => e
-          @logger.add(Logger::ERROR, "Failed to create internal reporter. Derived metrics will be unavailable. #{e}\n\t#{e.backtrace.join("\n\t")}")
+          @@logger.add(Logger::ERROR, "Failed to create internal reporter. Derived metrics will be unavailable. #{e}\n\t#{e.backtrace.join("\n\t")}")
           # Don't raise again as this isn't fatal
         end
       end
     end
-
 
     # Start and return a new `Span` representing a unit of work.
     #
@@ -102,15 +103,15 @@ module WavefrontOpentracing
       elsif parent.nil? && references
         references = [references] unless references.is_a?(Array)
         references.each do |reference|
-          if reference.is_a?(OpenTracing::Reference)
-            reference_ctx = reference.context
-            reference_ctx = reference_ctx.context if reference_ctx.is_a?(Span)
-            parent = reference_ctx if parent.nil?
-            if reference.type == OpenTracing::Reference.CHILD_OF
-              parents << reference_ctx.span_id
-            elsif reference.type == OpenTracing::Reference.FOLLOWS_FROM
-              follows << reference_ctx.span_id
-            end
+          next unless reference.is_a?(OpenTracing::Reference)
+
+          reference_ctx = reference.context
+          reference_ctx = reference_ctx.context if reference_ctx.is_a?(Span)
+          parent = reference_ctx if parent.nil?
+          if reference.type == OpenTracing::Reference.CHILD_OF
+            parents << reference_ctx.span_id
+          elsif reference.type == OpenTracing::Reference.FOLLOWS_FROM
+            follows << reference_ctx.span_id
           end
         end
       end
@@ -183,11 +184,11 @@ module WavefrontOpentracing
     def inject(span_context, format, carrier)
       propagator = @registry.get(format)
       raise ArgumentError, "Invalid format `#{format}`" unless propagator
-      span_context =
-        span_context.context if span_context.is_a?(Span)
+
+      span_context = span_context.context if span_context.is_a?(Span)
       unless span_context.is_a?(SpanContext)
         raise TypeError,
-          "Expecting Wavefront SpanContext, not '#{span_context.class}'"
+              "Expecting Wavefront SpanContext, not '#{span_context.class}'"
       end
 
       propagator.inject(span_context, carrier)
@@ -221,6 +222,7 @@ module WavefrontOpentracing
 
     def report_derived_metrics(span)
       return if @internal_reporter.nil?
+
       point_tags = { OPERATION_NAME_TAG => span.operation_name }
 
       invc_counter = "#{@app_service_prefix}#{span.operation_name}#{INVOCATION_SUFFIX}"
@@ -245,7 +247,7 @@ module WavefrontOpentracing
     #   Scope#active is nil.
     def active_span
       scope = scope_manager.active
-      scope.span if scope
+      scope&.span
     end
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'wavefront/client'
 require_relative 'test_helper'
 require_relative '../lib/wavefrontopentracing/reporting/wavefront'
@@ -16,23 +18,20 @@ class ReporterTest < Minitest::Test
   end
 
   def test_composite_reporter
-    proxy_host = '<wavefront_proxy_ip>'
-    metrics_port = 2878
-    distribution_port = 40_000
-    tracing_port = 30_000
+    proxy_host = 'localhost'
 
     reporter = []
     # create composite reporter to include proxy reporter, direct ingestion
     #   reporter and console reporter. Report span data to all the reporters.
     proxy_client = Wavefront::WavefrontProxyClient.new(proxy_host,
-                                                       metrics_port,
-                                                       distribution_port,
-                                                       tracing_port)
+                                                       nil,
+                                                       nil,
+                                                       nil)
     preporter = Reporting::WavefrontSpanReporter.new(client: proxy_client,
                                                      source: 'proxy')
 
     direct_client = Wavefront::WavefrontDirectIngestionClient.new(
-      'https://<cluster>.wavefront.com',
+      'https://localhost',
       '<api_token>'
     )
 
@@ -65,6 +64,7 @@ class ReporterTest < Minitest::Test
     # composite_reporter.report(active_span)
     # assert composite_reporter.failure_count
     # scope.close
-    tracer.close
+  ensure
+    tracer&.close
   end
 end
